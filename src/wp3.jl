@@ -97,21 +97,44 @@ function triple_loop(xy_cube, x, y)
 end
 
 """
-    make_grid(x, y, rmax)
+    make_grid(x, y, N)
 
     Make a grid of x and y coordinates with maximum size of rmax.
 
     Input:
     x - Float Array. x coordinates.
     y - Float Array. y coordinates.
-    rmax - Float. Maximum separation for the grid.
+    N - Int. Grid size.
 
     Output:
-    xy_cube - 2D Int array of indeces.
+    xy_cube - 4D array of x and y arranged on a grid.
+    Ngal - 2D array of integers. Number of galaxies in each gridcell.
     
-    xy_cube elements are arrays of integers that contain indexes of x and y that fall into that cube.
+    The first two indeces in xy_cube reference the grid, the third goes over galaxies, the fourth is x/y.
 """
-function make_cube(x, y, rmax)
-
-    return xy_cube
+function make_cube(x, y, N)
+    Ngal = zeros(Int, N, N)
+    xmin = minimum(x)
+    xmax = maximum(x)
+    ymin = minimum(y)
+    ymax = maximum(y)
+    for (xx, yy) in zip(x, y)
+        # 1e-6 to avoid getting zero when xx or yy is exactly at the lower edge.
+        Nx = ceil(Int, (xx - xmin + 1e-6)/(xmax - xmin + 1e-6)*N)
+        Ny = ceil(Int, (yy - ymin + 1e-6)/(ymax - ymin + 1e-6)*N)
+        Ngal[Nx, Ny] += 1
+    end
+    Ncounter = copy(Ngal)
+    # Cell with the largest number of galaxies
+    Nmax = maximum(Ngal)
+    # x-index, y-index, gal-index, xy-index
+    # This cube is not going to be filled all the way in all cells
+    xy_cube = zeros(N, N, Nmax, 2)
+    for (xx, yy) in zip(x, y)
+        Nx = ceil(Int, (xx - xmin + 1e-6)/(xmax - xmin + 1e-6)*N)
+        Ny = ceil(Int, (yy - ymin + 1e-6)/(ymax - ymin + 1e-6)*N)
+        xy_cube[Nx, Ny, Ncounter[Nx, Ny], :] = [xx, yy]
+        Ncounter[Nx, Ny] -= 1
+    end
+    return xy_cube, Ngal
 end
