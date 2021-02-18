@@ -66,6 +66,14 @@ for i in 1:10, j in 1:10, k in 1:10
     hist[i, j, k] = hist_comp[i, j, k]
 end
 
+# triple_loop
+x = [0, 1000, 499, 499, 499, 500, 500, 500, 501, 501, 501]
+y = [0, 1000, 499, 500, 501, 499, 500, 501, 499, 500, 501]
+hist = zeros(Int, 10, 10, 10)
+xy_cube, Ngal = make_cube(x, y, 100)
+println(sum(Ngal))
+triple_loop!(xy_cube, Ngal, 1.0, hist)
+@test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 16
 
 # make_cube
 

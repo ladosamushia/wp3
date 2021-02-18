@@ -91,35 +91,45 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
 end
 
 """
-    triple_loop!    (xy_cube, dr, hist)
+    triple_loop!    (xy_cube, Ngal, dr, hist)
 
     Loop over all triplets of neighbours in the xy_cube grid and histogram them.
 
     Input:
-    xy_cube - 2D Int array of indeces.
+    xy_cube - 4D float array of x y coordinates. The first two indeces are for the cell, the last two are for x and y
+    Ngal - 2D Int array of how many galaxies ended up in each cell.
     dr - Float. Bin width.
     hist - 3D Int array of histogrammed separations.
 
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
-function triple_loop!(xy_cube, dr, hist)
+function triple_loop!(xy_cube, Ngal, dr, hist)
     L = maximum(xy_cube) - minimum(xy_cube)
     Nmax = size(hist)[1]
     Ncube = size(xy_cube)[1]
-    for i1 in 1:Ncube, j1 in 1:Ncube
-        for i2 in 1:Ncube, j2 in 1:Ncube
-            di12 = abs(i1 - i2)
-            dj12 = abs(j1 - j2)
-            # Check these are neighbouring cells
-            if (di12 == 1 || di12 == Ncube - 1) && (dj12 == 1 || dj12 == Ncube - 1) 
+    # Iterate over all unique triplets of of cells
+    cell_index = Iterators.product(1:Ncube,1:Ncube)
+    trip_index = unique(Set, Iterators.product(cell_index, cell_index, cell_index))
+    for t_index in trip_index
+        (i1, j1), (i2, j2), (i3, j3) = t_index
+        if Ngal[i1, j1]*Ngal[i2, j2]*Ngal[i3,j3] == 0 continue end # skip empty cells
+        di12 = abs(i1 - i2)
+        dj12 = abs(j1 - j2)
+        Make this into a separate function
+         # Check these are neighbouring cells
+            if (di12 == 1 || di12 == 0 || di12 == Ncube - 1) && (dj12 == 1 || dj12 == 0 || dj12 == Ncube - 1) 
                 for i3 in 1:Ncube, j3 in 1:Ncube
+                    if Ngal[i3, j3] == 0 continue end
                     di23 = abs(i2 - i3)
                     di13 = abs(i1 - i3)
                     dj23 = abs(j2 - j3)
                     dj13 = abs(j1 - j3)
                     # Check these are neighbouring cells
-                    if (di23 == 1 || di23 == Ncube - 1) && (dj23 == 1 || dj23 == Ncube - 1)  && (di13 == 1 || di13 == Ncube - 1) && (dj13 == 1 || dj13 == Ncube - 1)
-                        histogram!(xy_cube[i1, j1], xy_cube[i2, j2], xy_cube[i3, j3], L, dr, hist)
+                    if (di23 == 1 || di23 == 0 || di23 == Ncube - 1) && (dj23 == 1 || dj23 == 0 || dj23 == Ncube - 1)  && (di13 == 1 || di13 == 0 || di13 == Ncube - 1) && (dj13 == 1 || dj13 == 0 || dj13 == Ncube - 1)
+                        xy1 = view(xy_cube, i1, j1, 1:Ngal[i1, j1], :)
+                        xy2 = view(xy_cube, i2, j2, 1:Ngal[i2, j2], :)
+                        xy3 = view(xy_cube, i3, j3, 1:Ngal[i3, j3], :)
+                        histogram!(xy1, xy2, xy3, L, dr, hist)
                     end
                 end
             end
