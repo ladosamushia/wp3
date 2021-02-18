@@ -1,20 +1,20 @@
 """
-    distance(x1, y1, x2, y2, L)
+    distance(p1, p2, L)
 
     Cartesian distance. L-periodic in both dimentions.
 
     Input:
-    x1, x2, y1, y2 - Floats.
+    p1, p2 - Float{2} contains x and y components.
     L - Float.
 
     Output:
     dist - Float.
 """
-function distance(x1, y1, x2, y2, L)
+function distance(p1, p2, L)
 
-    dx = abs(x2 - x1)
+    dx = abs(p1[1] - p2[1])
     dx > L/2 ? dx -= L : dx = dx
-    dy = abs(y2 - y1)
+    dy = abs(p1[2] - p2[2])
     dy > L/2 ? dy -= L : dy = dy
     dist = sqrt(dx.^2 + dy.^2)
 
@@ -42,59 +42,87 @@ function hist_index(r1, r2, r3, dr)
 end
 
 """
-    histogram!(ind1, ind2, ind3, x, y, w, L, dr, hist)
+    histogram!(xy1, xy2, xy3, L, dr, hist)
 
-    look at all triplets in ind1, ind2, ind3 and histogram the distances of x and y that they point to.
+    look at all triplets in 2D arrays xy1, xy2, xy3.
 
     Input:
-    ind1 - Int array.
-    ind2 - Int array.
-    Ind3 - Int array.
-    x - Float array.
-    y - Float array.
-    w - Float array. Weights.
+    xy? - Float 2D array.
     L - Float. Box size.
     dr - Float. Bin width.
-    hist - Float 3D array.
+    hist - Int 3D array.
 
-    ind1, ind2, ind3 can be identical, in which case this computes auto-triplets.
-    If only two cells coincide they have to be ind1 and ind2.
+    xy? can be identical, in which case this computes auto-triplets.
+    If only two cells coincide they have to be xy1 and xy2.
 """
-function histogram!(ind1, ind2, ind3, x, y, w, L, dr, hist)
+function histogram!(xy1, xy2, xy3, L, dr, hist)
 
     N = size(hist)[1]
-    for i1 in i1min:i1max, i2 in i2min:i2max, i3 in i3min:i3max
-        r12 = distance(x[ind1], y[i1], x[i2], y[i2], L)
-        r23 = distance(x[i2], y[i2], x[i3], y[i3], L)
-        r31 = distance(x[i3], y[i3], x[i1], y[i1], L)
-        h1, h2, h3 = hist_index(r12, r23, r13, dr)
-        if h1 > N || h2 > N || h3 > N || h1 < 1 || h2 < 1 || h3 < 1 
-            continue
+    # Check for identical cells in which case do auto-counts
+    for i1 in 1:length(xy1)[2]
+        if xy1 == xy2
+            i2min = i1 + 1
         else
-            hist[h1, h2, h3] += w[i1]*w[i2]*w[i3]
+            i2min = 1
+        end
+        for i2 in i2min:length(xy2)[2]
+            if xy2 == xy3
+                i3min = i2 + 1
+            else
+                i3min = 1
+            end
+            for i3 in i3min:length(xy3)[2]
+                r12 = distance(p1, p2, L)
+                r23 = distance(p2, p3, L)
+                r31 = distance(p3, p1, L)
+                h1, h2, h3 = hist_index(r12, r23, r13, dr)
+                if h1 > N || h2 > N || h3 > N || h1 < 1 || h2 < 1 || h3 < 1 
+                    continue
+                else
+                    hist[h1, h2, h3] += 1
+                end
+            end
         end
     end
     
 end
 
 """
-    triple_loop(xy_cube, x, y)
+    triple_loop!    (xy_cube, dr, hist)
 
     Loop over all triplets of neighbours in the xy_cube grid and histogram them.
 
     Input:
     xy_cube - 2D Int array of indeces.
-    x - Float array. x coordinates.
-    y - Float array. y coordinates.
-
-    Output:
-    hist - histogram of triplet separations.
+    dr - Float. Bin width.
+    hist - 3D Int array of histogrammed separations.
 
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
-function triple_loop(xy_cube, x, y)
-
-    return hist
+function triple_loop!(xy_cube, dr, hist)
+    L = maximum(xy_cube) - minimum(xy_cube)
+    Nmax = size(hist)[1]
+    Ncube = size(xy_cube)[1]
+    for i1 in 1:Ncube, j1 in 1:Ncube
+        for i2 in 1:Ncube, j2 in 1:Ncube
+            di12 = abs(i1 - i2)
+            dj12 = abs(j1 - j2)
+            # Check these are neighbouring cells
+            if (di12 == 1 || di12 == Ncube - 1) && (dj12 == 1 || dj12 == Ncube - 1) 
+                for i3 in 1:Ncube, j3 in 1:Ncube
+                    di23 = abs(i2 - i3)
+                    di13 = abs(i1 - i3)
+                    dj23 = abs(j2 - j3)
+                    dj13 = abs(j1 - j3)
+                    # Check these are neighbouring cells
+                    if (di23 == 1 || di23 == Ncube - 1) && (dj23 == 1 || dj23 == Ncube - 1)  && (di13 == 1 || di13 == Ncube - 1) && (dj13 == 1 || dj13 == Ncube - 1)
+                        histogram!(xy_cube[i1, j1], xy_cube[i2, j2], xy_cube[i3, j3], L, dr, hist)
+                    end
+                end
+            end
+        end
+    end
+        
 end
 
 """
