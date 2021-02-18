@@ -59,23 +59,26 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
 
     N = size(hist)[1]
     # Check for identical cells in which case do auto-counts
-    for i1 in 1:length(xy1)[2]
+    for i1 in 1:size(xy1)[1]
+        p1 = xy1[i1,:]
         if xy1 == xy2
             i2min = i1 + 1
         else
             i2min = 1
         end
-        for i2 in i2min:length(xy2)[2]
+        for i2 in i2min:size(xy2)[1]
+            p2 = xy2[i2,:]
             if xy2 == xy3
                 i3min = i2 + 1
             else
                 i3min = 1
             end
-            for i3 in i3min:length(xy3)[2]
+            for i3 in i3min:size(xy3)[1]
+                p3 = xy3[i3,:]
                 r12 = distance(p1, p2, L)
                 r23 = distance(p2, p3, L)
                 r31 = distance(p3, p1, L)
-                h1, h2, h3 = hist_index(r12, r23, r13, dr)
+                h1, h2, h3 = hist_index(r12, r23, r31, dr)
                 if h1 > N || h2 > N || h3 > N || h1 < 1 || h2 < 1 || h3 < 1 
                     continue
                 else
