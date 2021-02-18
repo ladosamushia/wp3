@@ -58,12 +58,13 @@ end
     hist - Float 3D array.
 
     ind1, ind2, ind3 can be identical, in which case this computes auto-triplets.
+    If only two cells coincide they have to be ind1 and ind2.
 """
 function histogram!(ind1, ind2, ind3, x, y, w, L, dr, hist)
 
     N = size(hist)[1]
-    for i1 in ind1, i2 in ind2, i3 in ind3
-        r12 = distance(x[i1], y[i1], x[i2], y[i2], L)
+    for i1 in i1min:i1max, i2 in i2min:i2max, i3 in i3min:i3max
+        r12 = distance(x[ind1], y[i1], x[i2], y[i2], L)
         r23 = distance(x[i2], y[i2], x[i3], y[i3], L)
         r31 = distance(x[i3], y[i3], x[i1], y[i1], L)
         h1, h2, h3 = hist_index(r12, r23, r13, dr)
@@ -73,7 +74,7 @@ function histogram!(ind1, ind2, ind3, x, y, w, L, dr, hist)
             hist[h1, h2, h3] += w[i1]*w[i2]*w[i3]
         end
     end
-
+    
 end
 
 """
