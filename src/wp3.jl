@@ -111,7 +111,7 @@ function triple_loop!(xy_cube, Ngal, dr, hist)
     L = maximum(xy_cube) - minimum(xy_cube)
     Ncube = size(xy_cube)[1]
 
-    for ix in 1:Ncube, iy in 1:Ncube, jx in ix:Ncube, jy in 1:Ncube, kx in ix:Ncube, ky in 1:Ncube
+    for ix in 1:Ncube, iy in 1:Ncube, jx in ix:Ncube, jy in 1:Ncube, kx in jx:Ncube, ky in 1:Ncube
         # Don't repeat triplets
         if (jx == ix && jy < iy) || (kx == jx && ky < jy)
             continue
