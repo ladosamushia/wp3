@@ -90,6 +90,7 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
     
 end
 
+
 """
     triple_loop!    (xy_cube, Ngal, dr, hist)
 
@@ -103,40 +104,31 @@ end
 
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
+
+
 function triple_loop!(xy_cube, Ngal, dr, hist)
+
     L = maximum(xy_cube) - minimum(xy_cube)
-    Nmax = size(hist)[1]
     Ncube = size(xy_cube)[1]
-    # Iterate over all unique triplets of of cells
-    cell_index = Iterators.product(1:Ncube,1:Ncube)
-    trip_index = unique(Set, Iterators.product(cell_index, cell_index, cell_index))
-    for t_index in trip_index
-        (i1, j1), (i2, j2), (i3, j3) = t_index
-        if Ngal[i1, j1]*Ngal[i2, j2]*Ngal[i3,j3] == 0 continue end # skip empty cells
-        di12 = abs(i1 - i2)
-        dj12 = abs(j1 - j2)
-        Make this into a separate function
-         # Check these are neighbouring cells
-            if (di12 == 1 || di12 == 0 || di12 == Ncube - 1) && (dj12 == 1 || dj12 == 0 || dj12 == Ncube - 1) 
-                for i3 in 1:Ncube, j3 in 1:Ncube
-                    if Ngal[i3, j3] == 0 continue end
-                    di23 = abs(i2 - i3)
-                    di13 = abs(i1 - i3)
-                    dj23 = abs(j2 - j3)
-                    dj13 = abs(j1 - j3)
-                    # Check these are neighbouring cells
-                    if (di23 == 1 || di23 == 0 || di23 == Ncube - 1) && (dj23 == 1 || dj23 == 0 || dj23 == Ncube - 1)  && (di13 == 1 || di13 == 0 || di13 == Ncube - 1) && (dj13 == 1 || dj13 == 0 || dj13 == Ncube - 1)
-                        xy1 = view(xy_cube, i1, j1, 1:Ngal[i1, j1], :)
-                        xy2 = view(xy_cube, i2, j2, 1:Ngal[i2, j2], :)
-                        xy3 = view(xy_cube, i3, j3, 1:Ngal[i3, j3], :)
-                        histogram!(xy1, xy2, xy3, L, dr, hist)
-                    end
-                end
-            end
+
+    for ix in 1:Ncube, iy in 1:Ncube, jx in ix:Ncube, jy in 1:Ncube, kx in ix:Ncube, ky in 1:Ncube
+        # Don't repeat triplets
+        if (jx == ix && jy < iy) || (kx == jx && ky < jy)
+            continue
         end
+        # Only do the immediate neighbours
+        if 1 < abs(ix - jx) < Ncube - 1 || 1 < abs(iy - jy) < Ncube - 1 ||1 < abs(jy - ky) < Ncube - 1 || 1 < abs(ix - kx) < Ncube - 1 || 1 < abs(jx - kx) < Ncube - 1 || 1 < abs(jy - ky) < Ncube - 1 
+            continue
+        end
+        if Ngal[ix, iy]*Ngal[jx, jy]*Ngal[kx, ky] == 0 continue end # skip empty cells
+        xy1 = view(xy_cube, ix, iy, 1:Ngal[ix, iy], :)
+        xy2 = view(xy_cube, jx, jy, 1:Ngal[jx, jy], :)
+        xy3 = view(xy_cube, kx, ky, 1:Ngal[kx, ky], :)
+        histogram!(xy1, xy2, xy3, L, dr, hist)
     end
-        
+
 end
+
 
 """
     make_grid(x, y, N)
