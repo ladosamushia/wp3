@@ -105,28 +105,31 @@ end
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
 
+step = [0 0 0 0; 0 0 0 1; 0 0 1 -1; 0 0 1 0; 0 0 1 1; 0 1 0 1; 0 1 1 0; 0 1 1 1; 1 -1 1 -1; 1 -1 1 0; 1 0 1 0; 1 0 1 1; 1 1 1 1]
 
 function triple_loop!(xy_cube, Ngal, dr, hist)
 
     L = maximum(xy_cube) - minimum(xy_cube)
     Ncube = size(xy_cube)[1]
+    for ix in 1:Ncube, iy in 1:Ncube, ss in eachrow(step)
+        jx = ix + ss[1] 
+        if jx == Ncube + 1 jx = 1 end 
+        if jx == 0 jx = Ncube end
+        jy = iy + ss[2]        
+        if jy == Ncube + 1 jy = 1 end 
+        if jy == 0 jy = Ncube end
+        kx = ix + ss[3]
+        if kx == Ncube + 1 kx = 1 end 
+        if kx == 0 kx = Ncube end
+        ky = iy + ss[4]
+        if ky == Ncube + 1 ky = 1 end 
+        if ky == 0 ky = Ncube end
 
-    for ix in 1:Ncube, iy in 1:Ncube, jx in ix:Ncube, jy in 1:Ncube, kx in jx:Ncube, ky in 1:Ncube
-        # Don't repeat triplets
-        if (jx == ix && jy < iy) || (kx == jx && ky < jy)
-            continue
-        end
-        # Only do the immediate neighbours
-        if 1 < abs(ix - jx) < Ncube - 1 || 1 < abs(iy - jy) < Ncube - 1 ||1 < abs(jy - ky) < Ncube - 1 || 1 < abs(ix - kx) < Ncube - 1 || 1 < abs(jx - kx) < Ncube - 1 || 1 < abs(jy - ky) < Ncube - 1 
-            continue
-        end
-        if Ngal[ix, iy]*Ngal[jx, jy]*Ngal[kx, ky] == 0 continue end # skip empty cells
         xy1 = view(xy_cube, ix, iy, 1:Ngal[ix, iy], :)
         xy2 = view(xy_cube, jx, jy, 1:Ngal[jx, jy], :)
         xy3 = view(xy_cube, kx, ky, 1:Ngal[kx, ky], :)
         histogram!(xy1, xy2, xy3, L, dr, hist)
     end
-
 end
 
 
