@@ -100,3 +100,27 @@ xy_cube, Ngal = make_cube(x, y, 100)
 triple_loop!(xy_cube, Ngal, 1.0, hist)
 @test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22
 @test sum(hist) == 84
+
+# reduce_hist
+hist = ones(5, 5, 5)
+rhist = reduce_hist(hist, 1.0)
+for rr in eachrow(rhist)
+    if rr[1] == rr[2] == rr[3]
+        @test rr[4] == 1
+    elseif rr[2] == rr[3] || rr[1] == rr[2]
+        @test rr[4] == 3
+    else
+        @test rr[4] == 6
+    end
+end
+
+# DDD
+x = [0, 1000, 499, 499, 499, 500, 500, 500, 501, 501, 501]
+y = [0, 1000, 499, 500, 501, 499, 500, 501, 499, 500, 501]
+rhist = DDD(x, y, 1.0, 10)
+for rr in eachrow(rhist)
+    if rr[1] == 0.5 && rr[2] == 0.5 && rr[3] == 1.5
+        @test rr[4] == 22
+    end
+end
+#@test sum(rhist[:,4]) == 84

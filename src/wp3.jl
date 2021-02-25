@@ -245,6 +245,6 @@ function DDD(x, y, dr, Nbin)
     Ncell = floor(Int, L/(dr*Nbin))
     xy_cube, N_cube = make_cube(x, y, Ncell)
     hist = zeros(Nbin, Nbin, Nbin)
-    hist = triple_loop!(xy_cube, N_cube, dr, hist)
+    triple_loop!(xy_cube, N_cube, dr, hist)
     rhist = reduce_hist(hist, dr)
 end
