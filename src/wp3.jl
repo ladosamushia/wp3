@@ -105,9 +105,9 @@ end
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
 
-step = [0 0 0 0; 0 0 0 1; 0 0 1 -1; 0 0 1 0; 0 0 1 1; 0 1 0 1; 0 1 1 0; 0 1 1 1; 1 -1 1 -1; 1 -1 1 0; 1 0 1 0; 1 0 1 1; 1 1 1 1]
-
 function triple_loop!(xy_cube, Ngal, dr, hist)
+
+    step = [0 0 0 0; 0 0 0 1; 0 0 1 -1; 0 0 1 0; 0 0 1 1; 0 1 0 1; 0 1 1 0; 0 1 1 1; 1 -1 1 -1; 1 -1 1 0; 1 0 1 0; 1 0 1 1; 1 1 1 1]
 
     L = maximum(xy_cube) - minimum(xy_cube)
     Ncube = size(xy_cube)[1]
@@ -174,4 +174,77 @@ function make_cube(x, y, N)
         Ncounter[Nx, Ny] -= 1
     end
     return xy_cube, Ngal
+end
+
+
+"""
+    reduce_hist(hist, dr)
+
+    Input:
+    hist - NxNxN array of floats
+    dr - bin size (rmin = 0 assumed)
+
+    Output:
+    hist_reduced - histogram reduced to a more convenient format ready to print.
+
+    The columns are r1, r2, r3, DDD.
+"""
+function reduce_hist(hist, dr)
+    N = size(hist)[1]
+    rmid = collect(range(dr/2, length=N, step=dr))
+
+    Ncol = 0
+    for i1 in 1:N, i2 in i1:N, i3 in i2:N
+        r1 = rmid[i1] # The shortest
+        r2 = rmid[i2]
+        r3 = rmid[i3] # The longest
+        if r3 < r2 + r1
+            Ncol += 1
+        end
+    end
+
+    hist_reduced = zeros(Ncol, 4)
+    Ncol = 1
+    for i1 in 1:N, i2 in i1:N, i3 in i2:N
+        r1 = rmid[i1] # The shortest
+        r2 = rmid[i2]
+        r3 = rmid[i3] # The longest
+        if r3 < r2 + r1
+            hist_reduced[Ncol, 1:3] = [r1 r2 r3]
+            if i1 == i2 == i3 # scalene
+                hist_reduced[Ncol, 4] = hist[i1, i2, i3]
+            elseif i2 == i3 # isoceles
+                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i2,i1,i3] + hist[i2,i3,i1]
+            elseif i1 == i2 # isoceles
+                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i3,i1,i2]
+            else # regular
+                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i2,i1,i3] + hist[i2,i3,i1] + hist[i3,i1,i2] + hist[i3,i2,i1]
+            end
+            Ncol += 1
+        end
+    end
+    
+    return hist_reduced
+
+end
+
+"""
+    DDD(x, y, dr, Nbin)
+
+    Input:
+    x - Array of floats
+    y - Array of floats
+    dr - Float. wp3 bin size.
+    Nbin - Int. Number of bins in each r.
+
+    Output:
+    rhist - 2D array. Floats. The columns are r1, r2, r3, wp3.
+"""
+function DDD(x, y, dr, Nbin)
+    L = maximum([x y]) - minimum([x y])
+    Ncell = floor(Int, L/(dr*Nbin))
+    xy_cube, N_cube = make_cube(x, y, Ncell)
+    hist = zeros(Nbin, Nbin, Nbin)
+    hist = triple_loop!(xy_cube, N_cube, dr, hist)
+    rhist = reduce_hist(hist, dr)
 end
