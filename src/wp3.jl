@@ -248,3 +248,18 @@ function DDD(x, y, dr, Nbin)
     triple_loop!(xy_cube, N_cube, dr, hist)
     rhist = reduce_hist(hist, dr)
 end
+
+function V2cap(r1, r2, r3)
+    π*(r2+r1-r3)^2*(r3^2+2*r3*r1-3*r1^2+2*r3*r2+6*r1*r2-3*r2^2)/12/d
+end
+
+function RRR(r1, r2, r3, dr)
+    r1min = r1 - dr/2
+    r1max = r1 + dr/2
+    r2min = r2 - dr/2
+    r2max = r2 + dr/2
+    Vtot = V2cap(r1max, r2max, r3)
+    Vtot -= V2cap(r1min, r2max, r3)
+    Vtot -= V2cap(r1max, r2min, r3)
+    Vtot += V2cap(r1min, r2min, r3)
+end
