@@ -59,22 +59,22 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
 
     N = size(hist)[1]
     # Check for identical cells in which case do auto-counts
-    for i1 in 1:size(xy1)[1]
-        p1 = xy1[i1,:]
+    for i1 in 1:size(xy1)[2]
+        p1 = xy1[:,i1]
         if xy1 == xy2
             i2min = i1 + 1
         else
             i2min = 1
         end
-        for i2 in i2min:size(xy2)[1]
-            p2 = xy2[i2,:]
+        for i2 in i2min:size(xy2)[2]
+            p2 = xy2[:,i2]
             if xy2 == xy3
                 i3min = i2 + 1
             else
                 i3min = 1
             end
-            for i3 in i3min:size(xy3)[1]
-                p3 = xy3[i3,:]
+            for i3 in i3min:size(xy3)[2]
+                p3 = xy3[:,i3]
                 r12 = distance(p1, p2, L)
                 r23 = distance(p2, p3, L)
                 r31 = distance(p3, p1, L)
@@ -105,29 +105,14 @@ end
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
 
-function triple_loop!(xy_cube, Ngal, dr, hist)
+function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, hist)
 
-    step = [0 0 0 0; 0 0 0 1; 0 0 1 -1; 0 0 1 0; 0 0 1 1; 0 1 0 1; 0 1 1 0; 0 1 1 1; 1 -1 1 -1; 1 -1 1 0; 1 0 1 0; 1 0 1 1; 1 1 1 1]
-
-    L = maximum(xy_cube) - minimum(xy_cube)
-    Ncube = size(xy_cube)[1]
-    for ix in 1:Ncube, iy in 1:Ncube, ss in eachrow(step)
-        jx = ix + ss[1] 
-        if jx == Ncube + 1 jx = 1 end 
-        if jx == 0 jx = Ncube end
-        jy = iy + ss[2]        
-        if jy == Ncube + 1 jy = 1 end 
-        if jy == 0 jy = Ncube end
-        kx = ix + ss[3]
-        if kx == Ncube + 1 kx = 1 end 
-        if kx == 0 kx = Ncube end
-        ky = iy + ss[4]
-        if ky == Ncube + 1 ky = 1 end 
-        if ky == 0 ky = Ncube end
-
-        xy1 = view(xy_cube, ix, iy, 1:Ngal[ix, iy], :)
-        xy2 = view(xy_cube, jx, jy, 1:Ngal[jx, jy], :)
-        xy3 = view(xy_cube, kx, ky, 1:Ngal[kx, ky], :)
+    L = maximum(xy_cube1) - minimum(xy_cube1)
+    Ncube = size(xy_cube1)[1]
+    for ix in 2:Ncube+1, iy in 2:Ncube+1, jx in -1:1, jy in -1:1, kx in -1:1, ky in -1:1
+        xy1 = view(xy_cube1, :, 1:Ngal1[ix, iy], ix, iy)
+        xy2 = view(xy_cube2, :, 1:Ngal2[ix+jx, iy+jy], ix+jx, iy+jy)
+        xy3 = view(xy_cube3, :, 1:Ngal3[ix+kx, iy+ky], ix+kx, iy+ky)
         histogram!(xy1, xy2, xy3, L, dr, hist)
     end
 end
@@ -148,9 +133,11 @@ end
     Ngal - 2D array of integers. Number of galaxies in each gridcell.
     
     The first two indeces in xy_cube reference the grid, the third goes over galaxies, the fourth is x/y.
+    There is a periodic padding around the cubes. The actual cube is between (2,N+1) row/columns 1 is equivalent
+    to row/column N+1. Similarly for row/columns N+2 and 2.
 """
 function make_cube(x, y, N)
-    Ngal = zeros(Int, N, N)
+    Ngal = zeros(Int, N+2, N+2)
     xmin = minimum(x)
     xmax = maximum(x)
     ymin = minimum(y)
@@ -159,20 +146,48 @@ function make_cube(x, y, N)
         # 1e-6 to avoid getting zero when xx or yy is exactly at the lower edge.
         Nx = ceil(Int, (xx - xmin + 1e-6)/(xmax - xmin + 1e-6)*N)
         Ny = ceil(Int, (yy - ymin + 1e-6)/(ymax - ymin + 1e-6)*N)
-        Ngal[Nx, Ny] += 1
+        Ngal[Nx+1, Ny+1] += 1
     end
+
+    # Create periodic padding around the inner cube
+    for i in 2:N+1
+        Ngal[1,i] = Ngal[N+1,i]
+        Ngal[N+2,i] = Ngal[2,i]
+        Ngal[i,1] = Ngal[i,N+1]
+        Ngal[i,N+2] = Ngal[i,2]
+    end
+    Ngal[1,1] = Ngal[N+1,N+1]
+    Ngal[1,N+2] = Ngal[N,2]
+    Ngal[N+2,1] = Ngal[2,N+1]
+    Ngal[N+2,N+2] = Ngal[2,2]
+    # end periodic padding
+
     Ncounter = copy(Ngal)
     # Cell with the largest number of galaxies
     Nmax = maximum(Ngal)
     # x-index, y-index, gal-index, xy-index
     # This cube is not going to be filled all the way in all cells
-    xy_cube = zeros(N, N, Nmax, 2)
+    xy_cube = zeros(2, Nmax, N+2, N+2)
     for (xx, yy) in zip(x, y)
         Nx = ceil(Int, (xx - xmin + 1e-6)/(xmax - xmin + 1e-6)*N)
         Ny = ceil(Int, (yy - ymin + 1e-6)/(ymax - ymin + 1e-6)*N)
-        xy_cube[Nx, Ny, Ncounter[Nx, Ny], :] = [xx, yy]
-        Ncounter[Nx, Ny] -= 1
+        xy_cube[:, Ncounter[Nx+1,Ny+1], Nx+1, Ny+1] = [xx, yy]
+        Ncounter[Nx+1, Ny+1] -= 1
     end
+
+    # Create periodic padding around the inner cube
+    for i in 2:N+1
+        xy_cube[:,:,1,i] = xy_cube[:,:,N+1,i]
+        xy_cube[:,:,N+2,i] = xy_cube[:,:,2,i]
+        xy_cube[:,:,i,1] = xy_cube[:,:,i,N+1]
+        xy_cube[:,:,i,N+2] = xy_cube[:,:,i,2]
+    end
+    xy_cube[:,:,1,1] = xy_cube[:,:,N+1,N+1]
+    xy_cube[:,:,1,N+2] = xy_cube[:,:,N,2]
+    xy_cube[:,:,N+2,1] = xy_cube[:,:,2,N+1]
+    xy_cube[:,:,N+2,N+2] = xy_cube[:,:,2,2]
+    # end periodic padding
+
     return xy_cube, Ngal
 end
 
