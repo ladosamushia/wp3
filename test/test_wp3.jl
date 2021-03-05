@@ -21,14 +21,14 @@ include("../src/wp3.jl")
 # histogram!(xy1, xy2, xy3, L, dr, hist)
 
 hist = zeros(Int, 10, 10, 10)
-xy1 = [1 1; 2 2; 3 3; 1999 1999]
-xy2 = [1.01 1.01; 2.01 2.01; 3.01 3.01; 1999.01 1999.01]
-xy3 = [7 7; 8 8; 9 9]
+xy1 = [1 2 3 1999; 1 2 3 1999]
+xy2 = [1.01 2.01 3.01 1999.01; 1.01 2.01 3.01 1999.01]
+xy3 = [7 8 9; 7 8 9]
 
 histogram!(xy3, xy3, xy3, 2000.0, 1.0, hist)
 for i in 1:10, j in 1:10, k in 1:10
     if i == 2 && j == 2 && k == 3
-        @test hist[i, j, k] == 1
+        @test hist[i, j, k] + hist[i, k, j] + hist[j, i, k] + hist[j, k, i] + hist[k, i, j] + hist[k, j, i] == 3
     else
         @test hist[i, j, k] == 0
     end
