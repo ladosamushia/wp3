@@ -27,8 +27,8 @@ xy3 = [7 8 9; 7 8 9]
 
 histogram!(xy3, xy3, xy3, 2000.0, 1.0, hist)
 for i in 1:10, j in 1:10, k in 1:10
-    if i == 2 && j == 2 && k == 3
-        @test hist[i, j, k] + hist[i, k, j] + hist[j, i, k] + hist[j, k, i] + hist[k, i, j] + hist[k, j, i] == 3
+    if (i == 2 && j == 2 && k == 3) || (i == 2 && j == 3 && k == 2) || (i == 3 && j == 2 && k == 2)
+        @test hist[2,2,3] + hist[2,3,2] + hist[3,2,2] == 6
     else
         @test hist[i, j, k] == 0
     end
@@ -72,24 +72,25 @@ x = [0, 5.1, 10]
 y = [0, 4.2, 10]
 xyc, Ngal = make_cube(x, y, 10)
 for i in 1:10, j in 1:10
-    if i == 6 && j == 5
-        @test(xyc[i,j,1,:] == [5.1,4.2])
+    if i == 6+1 && j == 5+1
+        @test(xyc[:,1,i,j] == [5.1,4.2])
+    elseif i == 10+1 && j == 10+1
+        @test(xyc[:,1,i,j] == [10,10])
     elseif i == 1 && j == 1
-        @test(xyc[i,j,1,:] == [0,0])
-    elseif i == 10 && j == 10
-        @test(xyc[i,j,1,:] == [10,10])
+        # periodic padding
+        @test(xyc[:,1,1,1] == [10,10])
     else
-        @test(xyc[i,j,1,:] == [0,0])
+        @test(xyc[:,1,i,j] == [0,0])
     end
 end
-@test sum(Ngal) == 3
+@test sum(Ngal[2:11,2:11]) == 3
 
 # triple_loop
 x = [0, 1000, 499, 499, 499, 500, 500, 500, 501, 501, 501]
 y = [0, 1000, 499, 500, 501, 499, 500, 501, 499, 500, 501]
 hist = zeros(Int, 10, 10, 10)
 xy_cube, Ngal = make_cube(x, y, 100)
-triple_loop!(xy_cube, Ngal, 1.0, hist)
+triple_loop!(xy_cube, xy_cube, xy_cube, Ngal, Ngal, Ngal, 1.0, hist)
 @test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22
 @test sum(hist) == 84
 
@@ -97,7 +98,7 @@ x = [999, 999, 999, 0, 0, 1000, 1, 1, 1]
 y = [999, 1000, 1, 999, 0, 1, 999, 1000, 1]
 hist = zeros(Int, 10, 10, 10)
 xy_cube, Ngal = make_cube(x, y, 100)
-triple_loop!(xy_cube, Ngal, 1.0, hist)
+triple_loop!(xy_cube, xy_cube, xy_cube, Ngal, Ngal, Ngal, 1.0, hist)
 @test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22
 @test sum(hist) == 84
 

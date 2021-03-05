@@ -63,13 +63,12 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
         p1 = xy1[:,i1]
         p2 = xy2[:,i2]
         p3 = xy3[:,i3]
-        println(p1, " ", p2, " ", p3)
         r12 = distance(p1, p2, L)
         r23 = distance(p2, p3, L)
         r31 = distance(p3, p1, L)
-#        println(r12, " ", r23, " ", r31)
+        if r12 == 0 || r23 == 0 || r31 == 0 continue end
         h1, h2, h3 = hist_index(r12, r23, r31, dr)
-        if h1 > N || h2 > N || h3 > N || h1 < 1 || h2 < 1 || h3 < 1 
+        if h1 > N || h2 > N || h3 > N
             continue
         else
             hist[h1, h2, h3] += 1
