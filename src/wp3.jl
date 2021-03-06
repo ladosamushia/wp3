@@ -20,6 +20,16 @@ function distance(p1, p2, L)
 
 end
 
+function neighbouring_triplets()
+    aa = Array{Int64,1}[]
+    for i in -1:1, j in -1:1, k in -1:1, l in -1:1
+        if abs(i-k) < 2 && abs(j-l) < 2
+            push!(aa, [i, j, k, l])
+        end
+    end
+    return aa
+end
+
 """
     hist_index(r1, r2, r3, dr)
 
@@ -98,8 +108,10 @@ function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, his
     println(L)
     Ncube = size(xy_cube1)[end] - 2
     println(Ncube)
+    ss = neighbouring_triplets()
     for ix in 2:Ncube+1, iy in 2:Ncube+1
-        for jx in -1:1, jy in -1:1, kx in -1:1, ky in -1:1
+        println(ix, " ", iy)
+        for (jx, jy, kx, ky) in ss
         xy1 = view(xy_cube1, :, 1:Ngal1[ix, iy], ix, iy)
         xy2 = view(xy_cube2, :, 1:Ngal2[ix+jx, iy+jy], ix+jx, iy+jy)
         xy3 = view(xy_cube3, :, 1:Ngal3[ix+kx, iy+ky], ix+kx, iy+ky)
