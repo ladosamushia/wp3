@@ -13,9 +13,9 @@
 function distance(p1, p2, L)
 
     dx = abs(p1[1] - p2[1])
-    dx > L/2 ? dx -= L : dx = dx
+    #dx > L/2 ? dx -= L : dx = dx
     dy = abs(p1[2] - p2[2])
-    dy > L/2 ? dy -= L : dy = dy
+    #dy > L/2 ? dy -= L : dy = dy
     dist = sqrt(dx.^2 + dy.^2)
 
 end
@@ -60,9 +60,9 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
     N = size(hist)[1]
     # Check for identical cells in which case do auto-counts
     for i1 in 1:size(xy1)[2], i2 in 1:size(xy2)[2], i3 in 1:size(xy3)[2]
-        p1 = xy1[:,i1]
-        p2 = xy2[:,i2]
-        p3 = xy3[:,i3]
+        p1 = view(xy1, :, i1)
+        p2 = view(xy2, :, i2)
+        p3 = view(xy3, :, i3)
         r12 = distance(p1, p2, L)
         r23 = distance(p2, p3, L)
         r31 = distance(p3, p1, L)
@@ -95,12 +95,16 @@ end
 function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, hist)
 
     L = maximum(xy_cube1) - minimum(xy_cube1)
-    Ncube = size(xy_cube1)[1]
-    for ix in 2:Ncube+1, iy in 2:Ncube+1, jx in -1:1, jy in -1:1, kx in -1:1, ky in -1:1
+    println(L)
+    Ncube = size(xy_cube1)[end] - 2
+    println(Ncube)
+    for ix in 2:Ncube+1, iy in 2:Ncube+1
+        for jx in -1:1, jy in -1:1, kx in -1:1, ky in -1:1
         xy1 = view(xy_cube1, :, 1:Ngal1[ix, iy], ix, iy)
         xy2 = view(xy_cube2, :, 1:Ngal2[ix+jx, iy+jy], ix+jx, iy+jy)
         xy3 = view(xy_cube3, :, 1:Ngal3[ix+kx, iy+ky], ix+kx, iy+ky)
         histogram!(xy1, xy2, xy3, L, dr, hist)
+        end
     end
 end
 

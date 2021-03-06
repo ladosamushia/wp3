@@ -91,16 +91,16 @@ y = [0, 1000, 499, 500, 501, 499, 500, 501, 499, 500, 501]
 hist = zeros(Int, 10, 10, 10)
 xy_cube, Ngal = make_cube(x, y, 100)
 triple_loop!(xy_cube, xy_cube, xy_cube, Ngal, Ngal, Ngal, 1.0, hist)
-@test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22
-@test sum(hist) == 84
+@test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22*6
+@test sum(hist) == 84*6
 
 x = [999, 999, 999, 0, 0, 1000, 1, 1, 1]
 y = [999, 1000, 1, 999, 0, 1, 999, 1000, 1]
 hist = zeros(Int, 10, 10, 10)
 xy_cube, Ngal = make_cube(x, y, 100)
 triple_loop!(xy_cube, xy_cube, xy_cube, Ngal, Ngal, Ngal, 1.0, hist)
-@test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22
-@test sum(hist) == 84
+@test hist[1,1,2] + hist[1,2,1] + hist[2,1,1] == 22*6
+@test sum(hist) == 84*6
 
 # reduce_hist
 hist = ones(5, 5, 5)
