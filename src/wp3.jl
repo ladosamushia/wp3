@@ -88,7 +88,7 @@ function histogram!(xy1, xy2, xy3, dr, hist)
         if h1 > N || h2 > N || h3 > N
             continue
         else
-            hist[h1, h2, h3] += (h1>N)*(h2>N)*(h3>N)
+            hist[h1, h2, h3] += 1
         end
     end
     
