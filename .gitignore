@@ -5,8 +5,14 @@ x_hod.dat
 src/wp3.jl.4524.mem
 y_hod.dat
 src/wp3.jl.4771.mem
+<<<<<<< HEAD
 =======
 src/wp3.jl.31.mem
 src/wp3.jl.57.mem
 src/wp3.jl.74.mem
 >>>>>>> a87cf90e40b024920c872f08adc07535077573db
+=======
+src/wp3.jl.31.mem
+src/wp3.jl.57.mem
+src/wp3.jl.74.mem
+>>>>>>> bigger_grid
