@@ -1,7 +1,7 @@
 """
     distance(p1, p2)
 
-    Cartesian distance. L-periodic in both dimentions.
+    Cartesian distance.
 
     Input:
     p1, p2 - Float{2} contains x and y components.
@@ -11,14 +11,23 @@
 """
 function distance(p1, p2)
 
-    dx = abs(p1[1] - p2[1])
+    dx = (p1[1] - p2[1])
     #dx > L/2 ? dx -= L : dx = dx
-    dy = abs(p1[2] - p2[2])
+    dy = (p1[2] - p2[2])
     #dy > L/2 ? dy -= L : dy = dy
     dist = sqrt(dx.^2 + dy.^2)
 
 end
 
+"""
+    neighbouring_triplets()
+
+    Output:
+    - aa: An array of quadrupoles of integers.
+
+    In 2D you have 9 neighbours (including yourself). All pairs of neighbours that are also neighbours.
+    Returns 4 numbers between -1 and 1 (x and y steps).
+"""
 function neighbouring_triplets()
     aa = Array{Int64,1}[]
     for i in -1:1, j in -1:1, k in -1:1, l in -1:1
@@ -33,13 +42,14 @@ end
     hist_index(r1, r2, r3, dr)
 
     Which bin does this r1, r2, r3 combination belongs to if the bin width is dr?
+
     Inputs:
     all Floats.
 
     Output:
     triplet of integers.
 
-    Assumes binning is uniform and starts at 0.
+    Assumes binning is uniform and starts at 0. Linear binning.
 """
 function hist_index(r1, r2, r3, dr)
 
@@ -51,18 +61,16 @@ function hist_index(r1, r2, r3, dr)
 end
 
 """
-    histogram!(xy1, xy2, xy3, L, dr, hist)
+    histogram!(xy1, xy2, xy3, dr, hist)
 
     look at all triplets in 2D arrays xy1, xy2, xy3.
 
     Input:
     xy? - Float 2D array.
-    L - Float. Box size.
     dr - Float. Bin width.
     hist - Int 3D array.
 
-    xy? can be identical, in which case this computes auto-triplets.
-    If only two cells coincide they have to be xy1 and xy2.
+    xy? can be identical, in which case this computes auto-triplets, but does not divide by the simmetry factor.
 """
 function histogram!(xy1, xy2, xy3, dr, hist)
 
@@ -80,7 +88,7 @@ function histogram!(xy1, xy2, xy3, dr, hist)
         if h1 > N || h2 > N || h3 > N
             continue
         else
-            hist[h1, h2, h3] += 1
+            hist[h1, h2, h3] += (h1>N)*(h2>N)*(h3>N)
         end
     end
     
@@ -88,19 +96,18 @@ end
 
 
 """
-    triple_loop!    (xy_cube, Ngal, dr, hist)
+    triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, hist)
 
     Loop over all triplets of neighbours in the xy_cube grid and histogram them.
 
     Input:
-    xy_cube - 4D float array of x y coordinates. The first two indeces are for the cell, the last two are for x and y
+    xy_cube? - 4D float array of x y coordinates. The first two indeces are for the x and y, the last two are indexing the cell.
     Ngal - 2D Int array of how many galaxies ended up in each cell.
     dr - Float. Bin width.
     hist - 3D Int array of histogrammed separations.
 
     Looks at all triplets that are separatd by no more than one cell and histograms them.
 """
-
 function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, hist)
 
     Ncube = size(xy_cube1)[end] - 2
@@ -131,7 +138,7 @@ end
     xy_cube - 4D array of x and y arranged on a grid.
     Ngal - 2D array of integers. Number of galaxies in each gridcell.
     
-    The first two indeces in xy_cube reference the grid, the third goes over galaxies, the fourth is x/y.
+    The first two indeces in xy_cube are x and y coordinates, the second one goes over galaxies, the last two reference the grid.
     There is a periodic padding around the cubes. The actual cube is between (2,N+1) row/columns 1 is equivalent
     to row/column N+1. Similarly for row/columns N+2 and 2.
 """
