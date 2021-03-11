@@ -1,16 +1,15 @@
 """
-    distance(p1, p2, L)
+    distance(p1, p2)
 
     Cartesian distance. L-periodic in both dimentions.
 
     Input:
     p1, p2 - Float{2} contains x and y components.
-    L - Float.
 
     Output:
     dist - Float.
 """
-function distance(p1, p2, L)
+function distance(p1, p2)
 
     dx = abs(p1[1] - p2[1])
     #dx > L/2 ? dx -= L : dx = dx
@@ -65,7 +64,7 @@ end
     xy? can be identical, in which case this computes auto-triplets.
     If only two cells coincide they have to be xy1 and xy2.
 """
-function histogram!(xy1, xy2, xy3, L, dr, hist)
+function histogram!(xy1, xy2, xy3, dr, hist)
 
     N = size(hist)[1]
     # Check for identical cells in which case do auto-counts
@@ -73,9 +72,9 @@ function histogram!(xy1, xy2, xy3, L, dr, hist)
         p1 = view(xy1, :, i1)
         p2 = view(xy2, :, i2)
         p3 = view(xy3, :, i3)
-        r12 = distance(p1, p2, L)
-        r23 = distance(p2, p3, L)
-        r31 = distance(p3, p1, L)
+        r12 = distance(p1, p2)
+        r23 = distance(p2, p3)
+        r31 = distance(p3, p1)
         if r12 == 0 || r23 == 0 || r31 == 0 continue end
         h1, h2, h3 = hist_index(r12, r23, r31, dr)
         if h1 > N || h2 > N || h3 > N
@@ -104,18 +103,15 @@ end
 
 function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, hist)
 
-    L = maximum(xy_cube1) - minimum(xy_cube1)
-    println(L)
     Ncube = size(xy_cube1)[end] - 2
-    println(Ncube)
     ss = neighbouring_triplets()
     for ix in 2:Ncube+1, iy in 2:Ncube+1
-        println(ix, " ", iy)
+        #println(ix, " ", iy)
         for (jx, jy, kx, ky) in ss
         xy1 = view(xy_cube1, :, 1:Ngal1[ix, iy], ix, iy)
         xy2 = view(xy_cube2, :, 1:Ngal2[ix+jx, iy+jy], ix+jx, iy+jy)
         xy3 = view(xy_cube3, :, 1:Ngal3[ix+kx, iy+ky], ix+kx, iy+ky)
-        histogram!(xy1, xy2, xy3, L, dr, hist)
+        histogram!(xy1, xy2, xy3, dr, hist)
         end
     end
 end
@@ -145,6 +141,8 @@ function make_cube(x, y, N)
     xmax = maximum(x)
     ymin = minimum(y)
     ymax = maximum(y)
+    L = xmax - xmin
+
     for (xx, yy) in zip(x, y)
         # 1e-6 to avoid getting zero when xx or yy is exactly at the lower edge.
         Nx = ceil(Int, (xx - xmin + 1e-6)/(xmax - xmin + 1e-6)*N)
@@ -160,7 +158,7 @@ function make_cube(x, y, N)
         Ngal[i,N+2] = Ngal[i,2]
     end
     Ngal[1,1] = Ngal[N+1,N+1]
-    Ngal[1,N+2] = Ngal[N,2]
+    Ngal[1,N+2] = Ngal[N+1,2]
     Ngal[N+2,1] = Ngal[2,N+1]
     Ngal[N+2,N+2] = Ngal[2,2]
     # end periodic padding
@@ -180,15 +178,15 @@ function make_cube(x, y, N)
 
     # Create periodic padding around the inner cube
     for i in 2:N+1
-        xy_cube[:,:,1,i] = xy_cube[:,:,N+1,i]
-        xy_cube[:,:,N+2,i] = xy_cube[:,:,2,i]
-        xy_cube[:,:,i,1] = xy_cube[:,:,i,N+1]
-        xy_cube[:,:,i,N+2] = xy_cube[:,:,i,2]
+        xy_cube[:,:,1,i] = xy_cube[:,:,N+1,i] .+ [-L; 0]
+        xy_cube[:,:,N+2,i] = xy_cube[:,:,2,i] .+ [L; 0]
+        xy_cube[:,:,i,1] = xy_cube[:,:,i,N+1] .+ [0; -L]
+        xy_cube[:,:,i,N+2] = xy_cube[:,:,i,2] .+ [0; L]
     end
-    xy_cube[:,:,1,1] = xy_cube[:,:,N+1,N+1]
-    xy_cube[:,:,1,N+2] = xy_cube[:,:,N,2]
-    xy_cube[:,:,N+2,1] = xy_cube[:,:,2,N+1]
-    xy_cube[:,:,N+2,N+2] = xy_cube[:,:,2,2]
+    xy_cube[:,:,1,1] = xy_cube[:,:,N+1,N+1] .+ [-L; -L]
+    xy_cube[:,:,1,N+2] = xy_cube[:,:,N+1,2] .+ [-L; L]
+    xy_cube[:,:,N+2,1] = xy_cube[:,:,2,N+1] .+ [L; -L]
+    xy_cube[:,:,N+2,N+2] = xy_cube[:,:,2,2] .+ [L; L]
     # end periodic padding
 
     return xy_cube, Ngal
@@ -263,7 +261,7 @@ function DDD(x, y, dr, Nbin)
     Ncell = floor(Int, L/(dr*Nbin))
     xy_cube, N_cube = make_cube(x, y, Ncell)
     hist = zeros(Nbin, Nbin, Nbin)
-    triple_loop!(xy_cube, N_cube, dr, hist)
+    triple_loop!(xy_cube, xy_cube, xy_cube, N_cube, N_cube, N_cube, dr, hist)
     rhist = reduce_hist(hist, dr)
 end
 
