@@ -263,12 +263,14 @@ end
     Output:
     rhist - 2D array. Floats. The columns are r1, r2, r3, wp3.
 """
-function DDD(x, y, dr, Nbin)
+function DDD(x1, y1, x2, y2, x3, y3, dr, Nbin)
     L = maximum([x y]) - minimum([x y])
     Ncell = floor(Int, L/(dr*Nbin))
-    xy_cube, N_cube = make_cube(x, y, Ncell)
+    xy1_cube, N1_cube = make_cube(x1, y1, Ncell)
+    xy2_cube, N2_cube = make_cube(x2, y2, Ncell)
+    xy3_cube, N3_cube = make_cube(x3, y3, Ncell)
     hist = zeros(Nbin, Nbin, Nbin)
-    triple_loop!(xy_cube, xy_cube, xy_cube, N_cube, N_cube, N_cube, dr, hist)
+    triple_loop!(xy1_cube, xy2_cube, xy3_cube, N1_cube, N2_cube, N3_cube, dr, hist)
     rhist = reduce_hist(hist, dr)
 end
 
