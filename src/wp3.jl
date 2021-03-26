@@ -264,7 +264,7 @@ end
     rhist - 2D array. Floats. The columns are r1, r2, r3, wp3.
 """
 function DDD(x1, y1, x2, y2, x3, y3, dr, Nbin)
-    L = maximum([x y]) - minimum([x y])
+    L = maximum([x1 x2 x3 y1 y2 y3]) - minimum([x1 x2 x3 y1 y2 y3])
     Ncell = floor(Int, L/(dr*Nbin))
     xy1_cube, N1_cube = make_cube(x1, y1, Ncell)
     xy2_cube, N2_cube = make_cube(x2, y2, Ncell)
