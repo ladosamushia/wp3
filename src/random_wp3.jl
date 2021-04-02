@@ -65,6 +65,11 @@ function RRR(rbinedges)
         if r3 + dr/2 < r2 - dr/2 + r1 - dr/2
             hist_RRR[Ncol, 1:3] = [r1 r2 r3]
             hist_RRR[Ncol, 4] = RRRVol(rbinedges[i1], rbinedges[i1+1], rbinedges[i2], rbinedges[i2+1], rbinedges[i3], rbinedges[i3+1])
+            if r1 == r2 == r3
+                hist_RRR[Ncol, 4] /= 6
+            elseif r1 == r2 || r2 == r3
+                hist_RRR[Ncol, 4] /= 2
+            end
             Ncol += 1
         end
     end

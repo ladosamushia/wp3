@@ -221,7 +221,7 @@ function reduce_hist(hist, dr)
         r1 = rmid[i1] # The shortest
         r2 = rmid[i2]
         r3 = rmid[i3] # The longest
-        if r3 < r2 + r1
+        if r3 + dr/2 < r2 - dr/2 + r1 - dr/2
             Ncol += 1
         end
     end
@@ -232,7 +232,7 @@ function reduce_hist(hist, dr)
         r1 = rmid[i1] # The shortest
         r2 = rmid[i2]
         r3 = rmid[i3] # The longest
-        if r3 < r2 + r1
+        if r3 + dr/2 < r2 - dr/2 + r1 - dr/2
             hist_reduced[Ncol, 1:3] = [r1 r2 r3]
             if i1 == i2 == i3 # scalene
                 hist_reduced[Ncol, 4] = hist[i1, i2, i3]
