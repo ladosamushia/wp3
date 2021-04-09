@@ -39,6 +39,49 @@ function neighbouring_triplets()
 end
 
 """
+    all_bins(r1, r2, r3, dr)
+
+    All triplets of valid (overlapping) bins.
+
+    Input:
+    - r1: Float, the shortest side.
+    - r2: Float, the middle side.
+    - r3: Float, the longest side.
+    Output:
+    - rtriplet: Array 3xNcol (Ncol will be internally determined).
+
+    rtriplet will have 3 columns for r1mid, r2mid, r3mid.
+""" 
+function all_bins(rmid, dr)
+
+    N = length(rmid)
+    Ncol = 0
+    for i1 in 1:N, i2 in i1:N, i3 in i2:N
+        r1 = rmid[i1] # The shortest
+        r2 = rmid[i2]
+        r3 = rmid[i3] # The longest
+        if r3 - dr/2 < r2 + dr/2 + r1 + dr/2
+            Ncol += 1
+        end
+    end
+
+    rtriplet = zeros(Ncol, 3)
+    Ncol = 1
+    for i1 in 1:N, i2 in i1:N, i3 in i2:N
+        r1 = rmid[i1] # The shortest
+        r2 = rmid[i2]
+        r3 = rmid[i3] # The longest
+        if r3 - dr/2 < r2 + dr/2 + r1 + dr/2
+            rtriplet[Ncol, :] = [r1 r2 r3]
+            Ncol += 1
+        end
+    end
+
+    return rtriplet
+
+end 
+
+"""
     hist_index(r1, r2, r3, dr)
 
     Which bin does this r1, r2, r3 combination belongs to if the bin width is dr?
@@ -75,7 +118,7 @@ end
 function histogram!(xy1, xy2, xy3, dr, hist)
 
     N = size(hist)[1]
-    # Check for identical cells in which case do auto-counts
+    # Avoid double counting identical cells
     for i1 in 1:size(xy1)[2], i2 in 1:size(xy2)[2], i3 in 1:size(xy3)[2]
         p1 = view(xy1, :, i1)
         p2 = view(xy2, :, i2)
@@ -113,7 +156,6 @@ function triple_loop!(xy_cube1, xy_cube2, xy_cube3, Ngal1, Ngal2, Ngal3, dr, his
     Ncube = size(xy_cube1)[end] - 2
     ss = neighbouring_triplets()
     for ix in 2:Ncube+1, iy in 2:Ncube+1
-        #println(ix, " ", iy)
         for (jx, jy, kx, ky) in ss
         xy1 = view(xy_cube1, :, 1:Ngal1[ix, iy], ix, iy)
         xy2 = view(xy_cube2, :, 1:Ngal2[ix+jx, iy+jy], ix+jx, iy+jy)
@@ -216,35 +258,26 @@ function reduce_hist(hist, dr)
     N = size(hist)[1]
     rmid = collect(range(dr/2, length=N, step=dr))
 
-    Ncol = 0
-    for i1 in 1:N, i2 in i1:N, i3 in i2:N
-        r1 = rmid[i1] # The shortest
-        r2 = rmid[i2]
-        r3 = rmid[i3] # The longest
-        if r3 + dr/2 < r2 - dr/2 + r1 - dr/2
-            Ncol += 1
-        end
-    end
+    rtriplet = all_bins(rmid, dr)
+    hist_reduced = zeros(size(rtriplet)[1], 4)
 
-    hist_reduced = zeros(Ncol, 4)
     Ncol = 1
-    for i1 in 1:N, i2 in i1:N, i3 in i2:N
-        r1 = rmid[i1] # The shortest
-        r2 = rmid[i2]
-        r3 = rmid[i3] # The longest
-        if r3 + dr/2 < r2 - dr/2 + r1 - dr/2
-            hist_reduced[Ncol, 1:3] = [r1 r2 r3]
-            if i1 == i2 == i3 # scalene
-                hist_reduced[Ncol, 4] = hist[i1, i2, i3]
-            elseif i2 == i3 # isoceles
-                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i2,i1,i3] + hist[i2,i3,i1]
-            elseif i1 == i2 # isoceles
-                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i3,i1,i2]
-            else # regular
-                hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i2,i1,i3] + hist[i2,i3,i1] + hist[i3,i1,i2] + hist[i3,i2,i1]
-            end
-            Ncol += 1
+    for r123 in eachrow(rtriplet)
+        r1, r2, r3 = r123
+        hist_reduced[Ncol, 1:3] = [r1 r2 r3]
+        i1 = ceil(Int, r1/dr)
+        i2 = ceil(Int, r2/dr)
+        i3 = ceil(Int, r3/dr)
+        if i1 == i2 == i3 # scalene
+            hist_reduced[Ncol, 4] = hist[i1, i2, i3]
+        elseif i2 == i3 # isoceles
+            hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i2,i1,i3] + hist[i2,i3,i1]
+        elseif i1 == i2 # isoceles
+            hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i3,i1,i2]
+        else # regular
+            hist_reduced[Ncol, 4] = hist[i1,i2,i3] + hist[i1,i3,i2] + hist[i2,i1,i3] + hist[i2,i3,i1] + hist[i3,i1,i2] + hist[i3,i2,i1]
         end
+        Ncol += 1
     end
     
     return hist_reduced
@@ -271,5 +304,11 @@ function DDD(x1, y1, x2, y2, x3, y3, dr, Nbin)
     xy3_cube, N3_cube = make_cube(x3, y3, Ncell)
     hist = zeros(Nbin, Nbin, Nbin)
     triple_loop!(xy1_cube, xy2_cube, xy3_cube, N1_cube, N2_cube, N3_cube, dr, hist)
+    # Account for self-triplets
+    if x1 == x2 == x3
+        hist ./= 6
+    elseif x1 == x2 || x2 == x3 || x3 == x1
+        hist ./= 2
+    end
     rhist = reduce_hist(hist, dr)
 end
