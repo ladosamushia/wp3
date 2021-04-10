@@ -2,6 +2,8 @@ using Test
 
 include("../src/wp3.jl")
 
+@testset "test_wp3.jl" begin
+
 # distance
 
 @test distance([1.0, 1.0], [4.0, 5.0]) == 5.0
@@ -147,3 +149,5 @@ for rr in eachrow(rhist)
     end
 end
 @test sum(rhist[:,4]) == 84
+
+end
